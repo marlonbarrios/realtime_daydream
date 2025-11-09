@@ -232,3 +232,10 @@ For production, you'll need an SSL certificate:
 - Install dependencies: `npm install`
 - Check that port 3000 (or your custom PORT) is available
 
+---
+
+## Credits
+
+**Hacked by [Marlon Barrios Solano](https://github.com/marlonbarrios)**
+
+Built with ❤️ for the StreamDiffusion community.
