@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // Serve static files from public directory
+app.use(express.static('.')); // Serve static files (index.html)
 
 // Get API key from environment variable
 const DAYDREAM_API_KEY = process.env.DAYDREAM_API_KEY?.trim();
