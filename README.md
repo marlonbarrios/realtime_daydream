@@ -1,6 +1,6 @@
-# StreamDiffusion Playground - Deployment Guide
+# StreamDiffusion Playground - Next.js Edition
 
-This is a web application with a secure backend proxy that keeps your API key safe on the server.
+This is a Next.js web application with secure API routes that keep your API key safe on the server.
 
 ## 🔒 Security
 
@@ -21,17 +21,15 @@ This is a web application with a secure backend proxy that keeps your API key sa
 
 2. **Set up your API key:**
    ```bash
-   # Copy the example file
-   cp env.example .env
+   # Create .env.local file (Next.js will automatically load it)
+   cp env.example .env.local
    
-   # Edit .env and add your actual API key
+   # Edit .env.local and add your actual API key
    # DAYDREAM_API_KEY=your_actual_key_here
    ```
 
-3. **Start the server:**
+3. **Start the development server:**
    ```bash
-   npm start
-   # Or for development with auto-reload:
    npm run dev
    ```
 
@@ -40,32 +38,44 @@ This is a web application with a secure backend proxy that keeps your API key sa
    http://localhost:3000
    ```
 
-The server will:
-- Serve the `index.html` file
-- Proxy API requests to Daydream API with your secure key
-- Handle CORS automatically
+The Next.js app will:
+- Serve the React frontend with hot reload
+- Handle API requests via `/api/*` routes (server-side only)
+- Keep your API key secure in environment variables
+- Work seamlessly with Vercel deployment
 
-## Production Deployment Options
+## Production Deployment
 
-### Option 1: Vercel (Recommended - Easiest & Free)
+### Vercel (Recommended - Perfect for Next.js)
 
-**Quick Deploy:**
-```bash
-npm i -g vercel
-vercel
-```
+**Deploy to Vercel:**
 
-**Important:** Set environment variables in Vercel dashboard:
-- `DAYDREAM_API_KEY` - Your Daydream API key
-- `PIPELINE_ID` - pip_qpUgXycjWF6YMeSL (optional, has default)
+1. **Push to GitHub** (already done if you're reading this)
 
-See [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) for detailed instructions.
+2. **Connect to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New..." → "Project"
+   - Import your repository: `marlonbarrios/realtime_daydream`
+   - Vercel will auto-detect Next.js
+
+3. **Set environment variables in Vercel dashboard:**
+   - Go to Project Settings → Environment Variables
+   - Add:
+     - `DAYDREAM_API_KEY` = your actual API key
+     - `PIPELINE_ID` = `pip_qpUgXycjWF6YMeSL` (optional, has default)
+   - Select: Production, Preview, Development
+   - Click "Save"
+
+4. **Deploy:**
+   - Click "Deploy" (or it will auto-deploy from GitHub)
 
 **Benefits:**
+- ✅ Perfect Next.js integration
 - ✅ Free HTTPS/SSL
 - ✅ Auto-scaling serverless functions
 - ✅ Easy GitHub integration
 - ✅ No server management needed
+- ✅ Automatic deployments on git push
 
 **Heroku:**
 ```bash
