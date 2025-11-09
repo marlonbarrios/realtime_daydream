@@ -1,7 +1,7 @@
 // Vercel serverless function: PATCH /api/streams/:streamId
 // Updates stream parameters via Daydream API
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Only allow PATCH
   if (req.method !== 'PATCH') {
     return res.status(405).json({ error: 'Method not allowed' });
