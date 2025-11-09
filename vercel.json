@@ -6,8 +6,12 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/",
+      "destination": "/index.js"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/index.js"
     }
   ],
   "headers": [
