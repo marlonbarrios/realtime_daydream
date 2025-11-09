@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Head from 'next/head'
-import dynamic from 'next/dynamic'
 
 const PIPELINE_ID = "pip_qpUgXycjWF6YMeSL";
 
@@ -522,7 +521,12 @@ function Home() {
   );
 }
 
-// Disable SSR for this page since it uses client-side only features (WebRTC, DOM manipulation)
-export default dynamic(() => Promise.resolve(Home), {
-  ssr: false
-});
+// Make this a static page to avoid serverless function execution
+export async function getStaticProps() {
+  return {
+    props: {},
+  };
+}
+
+// Export as default - Next.js will handle client-side rendering
+export default Home;
