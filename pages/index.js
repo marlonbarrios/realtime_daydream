@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import Head from 'next/head'
+import dynamic from 'next/dynamic'
 
 const PIPELINE_ID = "pip_qpUgXycjWF6YMeSL";
 
-export default function Home() {
+function Home() {
   const [currentStreamId, setCurrentStreamId] = useState(null);
   const [currentPlaybackId, setCurrentPlaybackId] = useState(null);
   const [currentWhipUrl, setCurrentWhipUrl] = useState(null);
@@ -31,6 +32,9 @@ export default function Home() {
   const localStreamRef = useRef(null);
 
   useEffect(() => {
+    // Ensure we're on the client side
+    if (typeof window === 'undefined') return;
+
     // Initialize defaults
     if (promptElRef.current) promptElRef.current.value = "superman made of neon particles flying over a futuristic city, cinematic lighting";
     if (negativeElRef.current) negativeElRef.current.value = "blurry, low quality, flat, 2d";
@@ -502,4 +506,9 @@ export default function Home() {
     </>
   );
 }
+
+// Disable SSR for this page since it uses client-side only features (WebRTC, DOM manipulation)
+export default dynamic(() => Promise.resolve(Home), {
+  ssr: false
+});
 
