@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daydream StreamDiffusion Playground</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      color-scheme: dark;
+      --accent: #ff6ad5;
+      --accent-soft: rgba(255, 106, 213, 0.18);
+      --bg: #050509;
+      --card: #101018;
+      --border: #26263a;
+      --text-subtle: #aaa8c5;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #17172a 0, #050509 55%);
+      color: #f5f5ff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+    h1 {
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    h1 span.badge {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      padding: 2px 9px;
+      border: 1px solid rgba(255, 106, 213, 0.6);
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-subtle);
+      margin-bottom: 16px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 18px;
+    }
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(0,0,0,0.35));
+      border-radius: 18px;
+      padding: 16px 16px 18px;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(255, 106, 213, 0.12), transparent 60%);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .card-inner {
+      position: relative;
+      z-index: 1;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .card-title span.label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-subtle);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill {
+      border-radius: 999px;
+      padding: 2px 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .row.spread {
+      justify-content: space-between;
+    }
+    label {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      display: block;
+      margin-bottom: 2px;
+    }
+    input, textarea, select {
+      width: 100%;
+      background: #05050a;
+      border-radius: 999px;
+      border: 1px solid #2c2c3c;
+      padding: 7px 10px;
+      color: #f5f5ff;
+      font-size: 0.8rem;
+      outline: none;
+      transition: border 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+    textarea {
+      border-radius: 12px;
+      min-height: 52px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(255,106,213,0.5);
+      background: #080813;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #585872;
+    }
+    .field-inline {
+      flex: 1 1 120px;
+      min-width: 0;
+    }
+    button {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 7px 14px;
+      font-size: 0.8rem;
+      background: var(--accent);
+      color: #050509;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease, border-color 0.12s ease;
+      box-shadow: 0 8px 22px rgba(255, 106, 213, 0.35);
+      white-space: nowrap;
+    }
+    button.secondary {
+      background: transparent;
+      border-color: #35354b;
+      color: #f5f5ff;
+      box-shadow: none;
+    }
+    button.ghost {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      padding-inline: 6px;
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 26px rgba(255, 106, 213, 0.48);
+      background: linear-gradient(135deg, #ff8ee6, #ff6ad5);
+    }
+    button.secondary:not(:disabled):hover {
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.8);
+      border-color: var(--accent);
+    }
+    .tiny {
+      font-size: 0.73rem;
+      color: var(--text-subtle);
+      margin-top: 4px;
+    }
+    .status-bar {
+      margin-top: 8px;
+      font-size: 0.74rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .status-pill {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-pill.ok {
+      border-color: rgba(0, 255, 150, 0.55);
+      color: #8cffe0;
+    }
+    .status-pill.err {
+      border-color: rgba(255, 80, 80, 0.7);
+      color: #ffb7b7;
+    }
+    .status-pill.dim {
+      color: var(--text-subtle);
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+    .status-dot.live {
+      box-shadow: 0 0 0 4px rgba(255, 80, 115, 0.4);
+      background: #ff5073;
+    }
+    .video-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    @media (max-width: 700px) {
+      .video-shell {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .pane-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-subtle);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    video, iframe {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #2b2b3d;
+      background: #05050a;
+      aspect-ratio: 16 / 9;
+      display: block;
+    }
+    iframe {
+      background: radial-gradient(circle at top, #151531, #030309);
+    }
+    .params-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .chip {
+      font-size: 0.72rem;
+      border-radius: 999px;
+      padding: 2px 8px;
+      border: 1px dashed rgba(255,255,255,0.15);
+      color: var(--text-subtle);
+      cursor: pointer;
+    }
+    .chip:hover {
+      border-style: solid;
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .footer-note {
+      margin-top: 16px;
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    code.inline {
+      background: #11111b;
+      border-radius: 6px;
+      padding: 1px 5px;
+      font-size: 0.75rem;
+      border: 1px solid #25253a;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>
+    StreamDiffusion Playground
+    <span class="badge">WebRTC • Livepeer</span>
+  </h1>
+  <div class="subtitle">
+    ① Create a Stream → ② Go Live from your webcam → ③ Watch the AI-morphed output in the player 💫  
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: Setup + Parameters -->
+    <div class="card">
+      <div class="card-inner">
+        <div class="card-title">
+          <span>1. API & Stream Setup</span>
+          <span class="label">
+            <span class="pill">Pipeline: <strong>pip_qpUgXycjWF6YMeSL</strong></span>
+          </span>
+        </div>
+
+        <div class="row">
+          <div class="field-inline">
+            <div class="tiny" style="padding: 8px; background: rgba(255, 106, 213, 0.1); border-radius: 8px; border: 1px solid rgba(255, 106, 213, 0.3);">
+              🔒 <strong>Secure Mode:</strong> API key is stored server-side in environment variables. 
+              See <code class="inline">.env</code> file and <code class="inline">server.js</code> for configuration.
+            </div>
+          </div>
+        </div>
+
+        <div class="row spread" style="margin-top: 4px;">
+          <button id="createStreamBtn">
+            <span>✨ Create Stream</span>
+          </button>
+          <button class="ghost" type="button" id="resetBtn">
+            Reset session
+          </button>
+        </div>
+
+        <div class="status-bar" id="setupStatus">
+          <span class="status-pill dim">
+            <span class="status-dot"></span> Stream not created yet
+          </span>
+        </div>
+
+        <div class="tiny" style="margin-top: 6px;">
+          <strong>Stream ID:</strong> <span id="streamIdDisplay">—</span> ·
+          <strong>Playback ID:</strong> <span id="playbackIdDisplay">—</span>
+        </div>
+
+        <hr style="margin: 14px 0 12px; border: none; border-top: 1px dashed #2c2c3a;" />
+
+        <div class="card-title">
+          <span>2. StreamDiffusion Parameters</span>
+          <span class="label">
+            <span class="pill">Model: stabilityai/sd-turbo</span>
+          </span>
+        </div>
+
+        <div class="params-grid">
+          <div>
+            <label for="prompt">Prompt</label>
+            <textarea id="prompt" placeholder="A neon cyberpunk city with watercolor strokes"></textarea>
+            <div class="chips">
+              <span class="chip" data-preset="dreamy">
+                dreamy watercolor forest, glowing mushrooms
+              </span>
+              <span class="chip" data-preset="comic">
+                gritty comic book style, bold ink lines
+              </span>
+              <span class="chip" data-preset="vaporwave">
+                vaporwave city, pastel gradients, nostalgic
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label for="negativePrompt">Negative Prompt</label>
+            <textarea id="negativePrompt" placeholder="blurry, low quality, flat, 2d"></textarea>
+          </div>
+
+          <div class="row">
+            <div class="field-inline">
+              <label for="steps">Num inference steps</label>
+              <input id="steps" type="number" min="1" max="60" />
+            </div>
+            <div class="field-inline">
+              <label for="seed">Seed</label>
+              <input id="seed" type="number" min="0" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field-inline">
+              <label for="openposeScale">Pose Conditioning Scale</label>
+              <input id="openposeScale" type="number" min="0" max="1" step="0.01" />
+              <div class="tiny">0 = off, ~0.2–0.4 = strong pose guidance</div>
+            </div>
+            <div class="field-inline">
+              <label for="hedScale">HED Edge Conditioning Scale</label>
+              <input id="hedScale" type="number" min="0" max="1" step="0.01" />
+              <div class="tiny">Preserve soft edges & silhouettes</div>
+            </div>
+          </div>
+
+          <div class="row spread" style="margin-top: 2px;">
+            <button id="applyParamsBtn" class="secondary">
+              🎨 Apply Parameters
+            </button>
+            <span class="tiny" id="paramsHint">Stream must be created first.</span>
+          </div>
+
+          <div class="status-bar" id="paramsStatus"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Video -->
+    <div class="card">
+      <div class="card-inner">
+        <div class="card-title">
+          <span>3. Live Video</span>
+          <span class="label">
+            <span class="pill">Input: Webcam via WHIP</span>
+            <span class="pill">Output: Livepeer iframe (WebRTC)</span>
+          </span>
+        </div>
+
+        <div class="row spread">
+          <button id="startWebcamBtn" class="secondary">
+            📹 Start webcam & go live
+          </button>
+          <span class="tiny">
+            We’ll use your webcam stream as input and render the AI-processed version on the right.
+          </span>
+        </div>
+
+        <div class="video-shell">
+          <div>
+            <div class="pane-title">
+              <span>Local Preview</span>
+              <span class="tiny">Muted on purpose 🔇</span>
+            </div>
+            <video id="localVideo" autoplay muted playsinline></video>
+          </div>
+          <div>
+            <div class="pane-title">
+              <span>AI Output Player</span>
+              <span class="tiny">Livepeer iframe · lowLatency=force</span>
+            </div>
+            <iframe
+              id="outputIframe"
+              title="Livepeer AI Output"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              referrerpolicy="origin"
+            ></iframe>
+          </div>
+        </div>
+
+        <div class="status-bar" id="videoStatus" style="margin-top: 10px;">
+          <span class="status-pill dim">
+            <span class="status-dot"></span> Webcam not started
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <span>
+      Serve this file via <code class="inline">python3 -m http.server</code> (no <code class="inline">file://</code>) to avoid CORS issues with <code class="inline">lvpr.tv</code>.
+    </span>
+    <span>
+      HLS is intentionally ignored here — this is a WebRTC-only party 🎉
+    </span>
+  </div>
+</div>
+
+<script>
+  // --- Basic config ---------------------------------------------------------
+  // API key is now stored securely on the server (see server.js and .env)
+  // All API calls go through /api/* proxy endpoints
+  // Works with both local server and Vercel deployment
+  const API_BASE_URL = window.location.origin; // Use same origin as the server
+  const PIPELINE_ID = "pip_qpUgXycjWF6YMeSL";
+
+  const createStreamBtn = document.getElementById("createStreamBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const setupStatus = document.getElementById("setupStatus");
+  const streamIdDisplay = document.getElementById("streamIdDisplay");
+  const playbackIdDisplay = document.getElementById("playbackIdDisplay");
+
+  const promptEl = document.getElementById("prompt");
+  const negativeEl = document.getElementById("negativePrompt");
+  const stepsEl = document.getElementById("steps");
+  const seedEl = document.getElementById("seed");
+  const openposeScaleEl = document.getElementById("openposeScale");
+  const hedScaleEl = document.getElementById("hedScale");
+  const applyParamsBtn = document.getElementById("applyParamsBtn");
+  const paramsHint = document.getElementById("paramsHint");
+  const paramsStatus = document.getElementById("paramsStatus");
+
+  const startWebcamBtn = document.getElementById("startWebcamBtn");
+  const localVideo = document.getElementById("localVideo");
+  const outputIframe = document.getElementById("outputIframe");
+  const videoStatus = document.getElementById("videoStatus");
+
+  // Internal state
+  let currentStreamId = null;
+  let currentPlaybackId = null;
+  let currentWhipUrl = null;
+  let pc = null;
+  let localStream = null;
+
+  // API key is handled server-side - no need for client-side function
+
+  function setSetupStatus(type, message) {
+    setupStatus.innerHTML = "";
+    const pill = document.createElement("span");
+    pill.className = "status-pill " + (type === "ok" ? "ok" : type === "err" ? "err" : "dim");
+    const dot = document.createElement("span");
+    dot.className = "status-dot" + (type === "ok" ? " live" : "");
+    pill.appendChild(dot);
+    pill.appendChild(document.createTextNode(" " + message));
+    setupStatus.appendChild(pill);
+  }
+
+  function setParamsStatus(type, message) {
+    paramsStatus.innerHTML = "";
+    if (!message) return;
+    const pill = document.createElement("span");
+    pill.className = "status-pill " + (type === "ok" ? "ok" : type === "err" ? "err" : "dim");
+    pill.textContent = message;
+    paramsStatus.appendChild(pill);
+  }
+
+  function setVideoStatus(type, message) {
+    videoStatus.innerHTML = "";
+    const pill = document.createElement("span");
+    pill.className = "status-pill " + (type === "ok" ? "ok" : type === "err" ? "err" : "dim");
+    const dot = document.createElement("span");
+    dot.className = "status-dot" + (type === "ok" ? " live" : "");
+    pill.appendChild(dot);
+    pill.appendChild(document.createTextNode(" " + message));
+    videoStatus.appendChild(pill);
+  }
+
+  function resetState() {
+    currentStreamId = null;
+    currentPlaybackId = null;
+    currentWhipUrl = null;
+    streamIdDisplay.textContent = "—";
+    playbackIdDisplay.textContent = "—";
+    outputIframe.src = "";
+    if (pc) {
+      pc.close();
+      pc = null;
+    }
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
+    if (localVideo) {
+      localVideo.srcObject = null;
+    }
+    setSetupStatus("dim", "Stream not created yet");
+    setParamsStatus("dim", "No parameters sent yet.");
+    setVideoStatus("dim", "Webcam not started");
+    paramsHint.textContent = "Stream must be created first.";
+  }
+
+  resetState();
+
+  // --- Create Stream --------------------------------------------------------
+  createStreamBtn.addEventListener("click", async () => {
+    createStreamBtn.disabled = true;
+    setSetupStatus("dim", "Creating stream…");
+
+    try {
+      // Call our secure backend proxy instead of Daydream API directly
+      const res = await fetch(`${API_BASE_URL}/api/streams`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pipeline_id: PIPELINE_ID,
+        }),
+      });
+
+      // Parse response once
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        const text = await res.text();
+        console.error("Failed to parse response:", text);
+        setSetupStatus("err", "Invalid response from server. Check server logs.");
+        throw new Error("Failed to parse response");
+      }
+
+      if (!res.ok) {
+        console.error("Create stream error:", data);
+        
+        // Provide helpful error messages
+        if (res.status === 401) {
+          setSetupStatus("err", "Invalid API key. Check your .env file or server configuration.");
+        } else if (res.status === 500 && data.message?.includes('not configured')) {
+          setSetupStatus("err", "API key not configured on server. Check server logs.");
+        } else {
+          setSetupStatus("err", `Failed to create stream: ${data.error || data.message || 'Unknown error'}`);
+        }
+        
+        throw new Error("HTTP " + res.status);
+      }
+      currentStreamId = data.id;
+      currentPlaybackId = data.output_playback_id;
+      currentWhipUrl = data.whip_url;
+
+      streamIdDisplay.textContent = currentStreamId || "—";
+      playbackIdDisplay.textContent = currentPlaybackId || "—";
+
+      if (currentPlaybackId) {
+        // WebRTC / low-latency player via iframe (no HLS)
+        outputIframe.src = `https://lvpr.tv/?v=${encodeURIComponent(currentPlaybackId)}&lowLatency=force&autoplay=1&muted=1`;
+      }
+
+      setSetupStatus("ok", "Stream created successfully");
+      paramsHint.textContent = "You can now tweak parameters & apply them 🎨";
+      setParamsStatus("dim", "No parameters sent yet.");
+
+    } catch (err) {
+      console.error(err);
+      setSetupStatus("err", "Failed to create stream. Check API key & network.");
+    } finally {
+      createStreamBtn.disabled = false;
+    }
+  });
+
+  resetBtn.addEventListener("click", () => {
+    resetState();
+  });
+
+  // --- Parameter presets ----------------------------------------------------
+  const chips = document.querySelectorAll(".chip[data-preset]");
+  chips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      const type = chip.getAttribute("data-preset");
+      if (type === "dreamy") {
+        promptEl.value = "dreamy watercolor forest, glowing bioluminescent mushrooms, soft volumetric fog, cinematic lighting";
+      } else if (type === "comic") {
+        promptEl.value = "gritty comic book style, bold ink lines, high contrast shadows, halftone texture, dynamic action pose";
+      } else if (type === "vaporwave") {
+        promptEl.value = "vaporwave city at night, neon grid, palm trees, pastel gradients, VHS artifacts, retrofuturistic";
+      }
+    });
+  });
+
+  // Initial defaults
+  promptEl.value = "superman made of neon particles flying over a futuristic city, cinematic lighting";
+  negativeEl.value = "blurry, low quality, flat, 2d";
+  stepsEl.value = 40;
+  seedEl.value = 42;
+  openposeScaleEl.value = 0.25;
+  hedScaleEl.value = 0.2;
+
+  // --- Apply Parameters -----------------------------------------------------
+  applyParamsBtn.addEventListener("click", async () => {
+    if (!currentStreamId) {
+      setParamsStatus("err", "Create a Stream first.");
+      return;
+    }
+
+    const prompt = promptEl.value.trim();
+    const negative_prompt = negativeEl.value.trim() || "blurry, low quality, flat, 2d";
+
+    let num_inference_steps = parseInt(stepsEl.value, 10);
+    if (!Number.isFinite(num_inference_steps) || num_inference_steps <= 0) num_inference_steps = 30;
+    if (num_inference_steps > 60) num_inference_steps = 60;
+
+    let seed = parseInt(seedEl.value, 10);
+    if (!Number.isFinite(seed) || seed < 0) seed = 42;
+
+    const openposeScale = parseFloat(openposeScaleEl.value) || 0;
+    const hedScale = parseFloat(hedScaleEl.value) || 0;
+
+    setParamsStatus("dim", "Sending parameter update…");
+    applyParamsBtn.disabled = true;
+
+    const body = {
+      model_id: "streamdiffusion",
+      pipeline: "live-video-to-video",
+      params: {
+        model_id: "stabilityai/sd-turbo",
+        prompt,
+        prompt_interpolation_method: "slerp",
+        normalize_prompt_weights: true,
+        normalize_seed_weights: true,
+        negative_prompt,
+        num_inference_steps,
+        seed,
+        // t_index_list values should not go above 50
+        t_index_list: [0, 8, 17],
+        controlnets: [
+          {
+            conditioning_scale: openposeScale,
+            control_guidance_end: 1,
+            control_guidance_start: 0,
+            enabled: true,
+            model_id: "thibaud/controlnet-sd21-openpose-diffusers",
+            preprocessor: "pose_tensorrt",
+            preprocessor_params: {}
+          },
+          {
+            conditioning_scale: hedScale,
+            control_guidance_end: 1,
+            control_guidance_start: 0,
+            enabled: true,
+            model_id: "thibaud/controlnet-sd21-hed-diffusers",
+            preprocessor: "soft_edge",
+            preprocessor_params: {}
+          },
+          // Keep the other controlnets as "off" via conditioning_scale: 0
+          {
+            conditioning_scale: 0,
+            control_guidance_end: 1,
+            control_guidance_start: 0,
+            enabled: true,
+            model_id: "thibaud/controlnet-sd21-canny-diffusers",
+            preprocessor: "canny",
+            preprocessor_params: {
+              high_threshold: 200,
+              low_threshold: 100
+            }
+          },
+          {
+            conditioning_scale: 0,
+            control_guidance_end: 1,
+            control_guidance_start: 0,
+            enabled: true,
+            model_id: "thibaud/controlnet-sd21-depth-diffusers",
+            preprocessor: "depth_tensorrt",
+            preprocessor_params: {}
+          },
+          {
+            conditioning_scale: 0,
+            control_guidance_end: 1,
+            control_guidance_start: 0,
+            enabled: true,
+            model_id: "thibaud/controlnet-sd21-color-diffusers",
+            preprocessor: "passthrough",
+            preprocessor_params: {}
+          }
+        ]
+      }
+    };
+
+    try {
+      // Call our secure backend proxy instead of Daydream API directly
+      const res = await fetch(`${API_BASE_URL}/api/streams/${encodeURIComponent(currentStreamId)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      // Parse response once
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        const text = await res.text();
+        console.error("Failed to parse response:", text);
+        setParamsStatus("err", "Invalid response from server.");
+        throw new Error("Failed to parse response");
+      }
+
+      if (!res.ok) {
+        console.error("Param update error:", data);
+        setParamsStatus("err", `Failed to update parameters: ${data.error || data.message || 'Unknown error'}`);
+        throw new Error("HTTP " + res.status);
+      }
+
+      setParamsStatus("ok", "Parameters updated ✨");
+    } catch (err) {
+      console.error(err);
+      setParamsStatus("err", "Failed to update parameters.");
+    } finally {
+      applyParamsBtn.disabled = false;
+    }
+  });
+
+  // --- Webcam -> WHIP (WebRTC) ---------------------------------------------
+  async function startWebcam() {
+    if (!currentWhipUrl) {
+      setVideoStatus("err", "Create a Stream first so we get a WHIP URL.");
+      return;
+    }
+
+    try {
+      setVideoStatus("dim", "Requesting webcam access…");
+      startWebcamBtn.disabled = true;
+
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localVideo.srcObject = localStream;
+
+      setVideoStatus("dim", "Creating WebRTC connection…");
+
+      pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+        ],
+      });
+
+      // Add local tracks to the PeerConnection
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+      pc.onicecandidate = async (event) => {
+        // WHIP usually uses non-trickle ICE; we only send the initial offer.
+        // If your WHIP endpoint supports trickle ICE, you'd POST PATCH with candidates here.
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Send SDP offer to WHIP endpoint
+      setVideoStatus("dim", "Sending WHIP offer…");
+      const res = await fetch(currentWhipUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/sdp",
+          "Accept": "application/sdp",
+        },
+        body: offer.sdp,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("WHIP error:", text);
+        throw new Error("Failed WHIP negotiation. HTTP " + res.status);
+      }
+
+      const answerSdp = await res.text();
+      const answer = new RTCSessionDescription({
+        type: "answer",
+        sdp: answerSdp,
+      });
+      await pc.setRemoteDescription(answer);
+
+      setVideoStatus("ok", "Live! Webcam streaming to StreamDiffusion 🔴");
+    } catch (err) {
+      console.error(err);
+      setVideoStatus("err", "Failed to start webcam or WHIP session.");
+      startWebcamBtn.disabled = false;
+    }
+  }
+
+  startWebcamBtn.addEventListener("click", startWebcam);
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Files to ignore when deploying to Vercel
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+check-env.js
+restart-server.sh
+start-server.sh
+QUICK_FIX.md
+TROUBLESHOOTING.md
+SETUP.md
+VERCEL_DEPLOY.md
+nginx.conf
+Dockerfile
+.dockerignore
+
